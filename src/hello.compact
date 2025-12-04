@@ -1,0 +1,14 @@
+// 1. Define the ledger variable as Bytes<32>
+// (Compact uses Bytes for on-chain text, not 'String')
+export ledger message: Bytes<32>;
+
+// 2. Constructor
+constructor() {
+    // We use 'pad' to make the short string fill the full 32 bytes
+    message = pad(32, "Hello, Midnight!");
+}
+
+// 3. Getter circuit
+export circuit get_message(): Bytes<32> {
+    return message;
+}
