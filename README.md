@@ -39,10 +39,10 @@ A local service (running in Docker) that takes your private data and the ZKIR ci
 | Requirement | Notes |
 |-------------|-------|
 | **Node.js** | v18 or higher (v20+ recommended) |
-| **Compact Compiler** | `compact` CLI installed and in your PATH. [Download Here](https://github.com/midnight-ntwrk/compact/releases) |
+| **Compact Compiler** | `compact` CLI installed and in your PATH.
 | **WSL 2** | **Required for Windows users** - no native Windows compiler exists |
 | **Docker Desktop** | Required for the local Proof Server |
-| **Midnight Lace Wallet** | Browser extension with Testnet tokens (tDUST) |
+| **Midnight Lace Wallet** | Browser extension with or without Testnet tokens (tDUST) |
 
 ---
 
@@ -51,7 +51,7 @@ A local service (running in Docker) that takes your private data and the ZKIR ci
 ```
 dawn1/
 ├── .vscode/
-│   └── tasks.json          # VS Code build task (Ctrl+Shift+B)
+│   └── tasks.json          # Script to run hello.compact (Ctrl+Shift+B)
 ├── src/
 │   ├── hello.compact       # 🎯 THE SMART CONTRACT
 │   ├── test.ts             # 🔌 Wallet connection & testnet bridge
@@ -107,18 +107,13 @@ dawn1/
 
 ## ⚡ Usage
 
-### 1. Compile the Smart Contract
+### 1. Compile the Smart Contract (this is already done)
 
 Compile your `.compact` code into TypeScript bindings and ZK circuits.
 
 **Option A — VS Code (Recommended):**
 1. Open `src/hello.compact`
 2. Press `Ctrl + Shift + B`
-
-**Option B — Terminal:**
-```bash
-npm run build
-```
 
 ✅ **Success Indicator:** The `src/managed` folder will populate with `.zkir`, `.cjs`, and `.d.cts` files.
 
@@ -142,7 +137,7 @@ npx ts-node src/test.ts
 ------------------------------------------------
 ```
 
-> 💡 **Tip:** If Coin Balance shows `{}`, your balance is 0. Request tokens from the [Midnight Testnet Faucet](https://faucet.testnet.midnight.network/).
+> 💡 **Tip:** If Coin Balance shows `{}`, your balance is 0. Request tokens from the [Midnight Testnet Faucet](https://midnight.network/test-faucet).
 
 ---
 
