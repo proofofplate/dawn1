@@ -1,3 +1,5 @@
+https://docs.google.com/document/d/1703jaufjwUPkwC5CSlm5tygwnGJuMx6sOMGaghlEqSY/edit?usp=sharing
+
 # Midnight Network Starter Kit 🌑
 
 A robust, pre-configured boilerplate for building privacy-preserving decentralized applications (dApps) on the Midnight Network.
