@@ -1,52 +1,36 @@
-pragma language_version >= 0.14.0;
+pragma language_version >= 0.16;
 
 import CompactStandardLibrary;
 
-// The bulletin board can be in one of two states
-export enum BoardState { VACANT, OCCUPIED }
-
-// Public on-chain state — readable by anyone
-export ledger {
-  state: BoardState;
-  message: Bytes<128>;
-  poster_hash: Bytes<32>;  // sha256 of poster's secret — proves ownership without revealing it
-  post_count: Uint<32>;
+export enum BoardState {
+  VACANT,
+  OCCUPIED
 }
 
-// Private witness — the poster's secret key, never leaves the client
-witness local_secret(): Bytes<32>;
+export ledger state: BoardState;
+export ledger message: Maybe<Opaque<"string">>;
+export ledger posterHash: Bytes<32>;
+export ledger postCount: Counter;
 
 constructor() {
   state = BoardState.VACANT;
-  message = pad(128, "");
-  poster_hash = pad(32, "");
-  post_count = 0;
+  message = none<Opaque<"string">>();
 }
 
-// Post a message.
-// Generates a ZK proof that the caller knows a secret key,
-// stores its hash on-chain — no identity is revealed.
-export circuit post(new_message: Bytes<128>): [] {
-  assert state == BoardState.VACANT : "Board is currently occupied";
-  const sk = local_secret();
-  poster_hash = disclose(sha256(sk));
-  message = new_message;
+witness localSecret(): Bytes<32>;
+
+export circuit post(newMessage: Opaque<"string">): [] {
+  assert(state == BoardState.VACANT, "Board is currently occupied");
+  posterHash = disclose(persistentHash<Bytes<32>>(localSecret()));
+  message = disclose(some<Opaque<"string">>(newMessage));
   state = BoardState.OCCUPIED;
-  post_count = post_count + 1;
+  postCount.increment(1);
 }
 
-// Take down a message.
-// Only the original poster can do this — proven by ZK without revealing identity.
-export circuit take_down(): [] {
-  assert state == BoardState.OCCUPIED : "Board is currently vacant";
-  const sk = local_secret();
-  assert disclose(sha256(sk)) == poster_hash : "Only the original poster can take this down";
+export circuit takeDown(): [] {
+  assert(state == BoardState.OCCUPIED, "Board is currently vacant");
+  assert(persistentHash<Bytes<32>>(localSecret()) == posterHash, "Only the original poster can take this down");
   state = BoardState.VACANT;
-  message = pad(128, "");
-  poster_hash = pad(32, "");
-}
-
-// Read the current message publicly.
-export circuit read_board(): Bytes<128> {
-  return disclose(message);
+  message = none<Opaque<"string">>();
+  posterHash = pad(32, "");
 }

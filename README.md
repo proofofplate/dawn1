@@ -1,182 +1,81 @@
-https://docs.google.com/document/d/1703jaufjwUPkwC5CSlm5tygwnGJuMx6sOMGaghlEqSY/edit?usp=sharing
+> Built on Midnight (dApps, contracts, or tooling that run directly on Midnight): "This project is built on the Midnight Network."
 
-# Midnight Network Starter Kit 🌑
+# dawn1
 
-A robust, pre-configured boilerplate for building privacy-preserving decentralized applications (dApps) on the Midnight Network.
+Midnight Network starter kit. Bulletin-board Compact contract + a wallet bootstrap that connects to PreProd.
 
-This repository bridges the gap between reading the documentation and running actual code. It includes a working Compact smart contract ("Hello World") and a fully typed TypeScript environment configured to compile Zero-Knowledge circuits and authenticate with the Midnight Testnet.
+The contract is a one-slot bulletin board: anyone can post a message, but only the original poster can take it down, proven in ZK without revealing who they are.
 
----
+## PreProd dependency versions
 
-## 🧐 Why Use This Starter Kit?
+Pinned in [`package.json`](package.json), aligned with the [Midnight compatibility matrix](https://docs.midnight.network/relnotes/support-matrix). All values meet or exceed the PreProd minimums.
 
-Setting up a Zero-Knowledge (ZK) development environment is complex. This repo solves the most common "Day 1" hurdles developers face:
+| Component | Min (PreProd) | Here | npm package |
+|---|---|---|---|
+| Compact runtime | 0.14.0 | 0.16.0 | `@midnight-ntwrk/compact-runtime` |
+| Compact compiler | 0.28.0 | 0.31.0 | install with `compact update 0.31.0` |
+| Compact JS | 2.4.0 | 2.5.0 | `@midnight-ntwrk/compact-js` |
+| Midnight.js | 3.0.0 | 4.0.4 | `@midnight-ntwrk/midnight-js-*` |
+| Wallet SDK | 1.0.0 | 3.0.0 / 2.1.0 | `@midnight-ntwrk/wallet-sdk-facade` 3.0.0 + `wallet-sdk-shielded` / `wallet-sdk-unshielded-wallet` 2.1.0 (matches the `example-bboard` pinning) |
+| DApp Connector API | 4.0.0 | 4.0.1 | `@midnight-ntwrk/dapp-connector-api` |
+| Indexer | 3.0.0 | 4.0.4 | `@midnight-ntwrk/midnight-js-indexer-public-data-provider` |
+| Proof server (Docker) | 7.0.0 | 8.0.3 | `midnightntwrk/proof-server:latest` |
 
-| Challenge | Solution |
-|-----------|----------|
-| **Dependency Hell** | The `@midnight-ntwrk` SDKs (`wallet`, `wallet-api`, `ledger`, `zswap`) require specific version matching. This `package.json` is pre-aligned to work together. |
-| **The "Hex Seed" Trap** | The official Wallet SDK requires a 64-character hexadecimal entropy string, not a standard 24-word mnemonic. This kit handles this conversion securely using `bip39`. |
-| **Automated Compilation** | Instead of remembering long CLI flags, this repo uses VS Code tasks to handle compilation with the correct flags (`--vscode --skip-zk`). |
-| **WSL/Linux Ready** | Configured to work seamlessly in WSL 2, which is the required environment for the Compact compiler on Windows machines. |
+## Setup
 
----
-
-## 📚 Key Concepts Explained
-
-If you are new to Midnight, here is how the pieces fit together:
-
-### Compact Language (`.compact`)
-A domain-specific language for writing smart contracts. Unlike Solidity, Compact splits logic into **Public (Ledger)** and **Private (Witness)** domains. Your contract logic lives in [`src/hello.compact`](src/hello.compact).
-
-### ZKIR (Zero-Knowledge Intermediate Representation)
-When you compile your contract, it generates mathematical "circuits" (`.zkir` files). These circuits allow a user to prove they ran the code correctly **without revealing their private input data**. See [`src/managed/zkir/`](src/managed/zkir/) for generated circuits.
-
-### Proof Server
-A local service (running in Docker) that takes your private data and the ZKIR circuit to generate a cryptographic proof. This proof is what actually gets sent to the blockchain, keeping your data local and safe.
-
----
-
-## 🛠️ Prerequisites
-
-| Requirement | Notes |
-|-------------|-------|
-| **Node.js** | v18 or higher (v20+ recommended) |
-| **Compact Compiler** | `compact` CLI installed and in your PATH.
-| **WSL 2** | **Required for Windows users** - no native Windows compiler exists |
-| **Docker Desktop** | Required for the local Proof Server |
-| **Midnight Lace Wallet** | Browser extension with or without Testnet tokens (tDUST) |
-
----
-
-## 📂 Project Structure
-
-```
-dawn1/
-├── .vscode/
-│   └── tasks.json          # Script to run hello.compact (Ctrl+Shift+B)
-├── src/
-│   ├── hello.compact       # 🎯 THE SMART CONTRACT
-│   ├── test.ts             # 🔌 Wallet connection & testnet bridge
-│   └── managed/            # ⚙️ AUTO-GENERATED (do not edit!)
-│       ├── contract/       # TypeScript bindings for your contract
-│       │   ├── index.cjs   # Runtime implementation
-│       │   └── index.d.cts # Type definitions
-│       ├── zkir/           # ZK circuits for the Proof Server
-│       └── compiler/       # Contract metadata
-├── .env                    # 🔐 Your seed phrase (git-ignored)
-├── .env.example            # Template for .env
-├── .gitignore              # Protects secrets from commits
-└── package.json            # Midnight SDK dependencies
-```
-
-### File Details
-
-| File | Purpose |
-|------|---------|
-| [`src/hello.compact`](src/hello.compact) | Defines a `Bytes<32>` ledger variable and a `get_message()` circuit that returns "Hello, Midnight!" |
-| [`src/test.ts`](src/test.ts) | Converts mnemonic → hex, builds wallet, connects to testnet, displays balance |
-| [`src/managed/contract/index.d.cts`](src/managed/contract/index.d.cts) | TypeScript types for `Contract`, `Ledger`, and `Circuits` |
-| [`.vscode/tasks.json`](.vscode/tasks.json) | Runs `compact compile --vscode --skip-zk` on the active file |
-
----
-
-## 📦 Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd dawn1
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Add your seed phrase to `.env`:**
-   ```
-   WALLET_SEED="word1 word2 word3 ... word24"
-   ```
-
-> ⚠️ **Security Warning:** Never commit your `.env` file. It is already included in `.gitignore`.
-
----
-
-## ⚡ Usage
-
-### 1. Compile the Smart Contract (this is already done)
-
-Compile your `.compact` code into TypeScript bindings and ZK circuits.
-
-**Option A — VS Code (Recommended):**
-1. Open `src/hello.compact`
-2. Press `Ctrl + Shift + B`
-
-✅ **Success Indicator:** The `src/managed` folder will populate with `.zkir`, `.cjs`, and `.d.cts` files.
-
-### 2. Connect to Testnet
-
-Verify your environment is correctly connected to the Midnight Testnet:
+Requires Node 22+, Docker, and the `compact` CLI on PATH (Linux/macOS or WSL2 on Windows).
 
 ```bash
-npx ts-node src/test.ts
+git clone <repo> dawn1
+cd dawn1
+
+compact update 0.31.0
+npm install
+
+cp .env.example .env       # add your 24-word seed to WALLET_SEED
+
+# proof server (keep this terminal running)
+docker run --rm -p 6300:6300 midnightntwrk/proof-server \
+  -- 'midnight-proof-server --network preprod'
+
+npm run build              # compiles the contract
+npm run dev                # connects to PreProd, prints addresses + balances
 ```
 
-**Expected Output:**
+`npm run build:zk` also generates proving keys (slower).
+
+## Layout
+
 ```
-🌑 Connecting to Midnight Testnet...
-🔑 Converted Mnemonic to Hex Seed
-✅ Wallet started!
-
-------------------------------------------------
-📦 Wallet Address: mn_shield-addr_...
-💰 Coin Balance: { ... }
-------------------------------------------------
+src/
+  contract/bboard.compact   the contract
+  managed/                  generated by `npm run build` (gitignored)
+  config.ts                 network endpoints, setNetworkId
+  wallet.ts                 FluentWalletBuilder from a mnemonic
+  index.ts                  entry point
+.env.example                template — copy to .env
 ```
 
-> 💡 **Tip:** If Coin Balance shows `{}`, your balance is 0. Request tokens from the [Midnight Testnet Faucet](https://midnight.network/test-faucet).
+## .env
 
----
+`.env` is gitignored. The example file documents:
 
-## 🔧 Configuration Reference
+- `WALLET_SEED` — 24-word BIP39 mnemonic (required)
+- `NETWORK_ID` — `preprod` (default) or `preview`
+- `PROOF_SERVER` — defaults to `http://localhost:6300`
+- `INDEXER` / `INDEXER_WS` / `MN_NODE` / `MN_NODE_WS` — only set if you run your own
+- `WALLET_UNSHIELDED` / `WALLET_SHIELDED` / `WALLET_DUST` — optional, just for your own reference; nothing in code reads them
 
-### Testnet Endpoints
+Never commit `.env`. Seeds and addresses stay local.
 
-Defined in `src/test.ts`:
+## Where to go from here
 
-| Service | URL |
-|---------|-----|
-| Indexer (GraphQL) | `https://indexer.testnet-02.midnight.network/api/v1/graphql` |
-| Indexer (WebSocket) | `wss://indexer.testnet-02.midnight.network/api/v1/graphql/ws` |
-| RPC Node | `https://rpc.testnet-02.midnight.network` |
-| Proof Server | `http://127.0.0.1:6300` (local Docker) |
+- Deploy script using `@midnight-ntwrk/midnight-js-contracts`.
+- Typed API around the circuits — see [example-bboard/api](https://github.com/midnightntwrk/example-bboard/tree/main/api).
+- Browser wallet via `@midnight-ntwrk/dapp-connector-api` instead of a mnemonic.
 
-### SDK Versions
+The official multi-package reference is [midnightntwrk/example-bboard](https://github.com/midnightntwrk/example-bboard).
 
-From `package.json`:
-
-| Package | Version |
-|---------|---------|
-| `@midnight-ntwrk/compact-runtime` | ^0.9.0 |
-| `@midnight-ntwrk/wallet` | ^5.0.0 |
-| `@midnight-ntwrk/ledger` | ^4.0.0 |
-| `@midnight-ntwrk/zswap` | ^4.0.0 |
-
----
-
-## 🚀 Next Steps
-
-1. **Modify the contract** — Edit `hello.compact` to add new ledger state or circuits
-2. **Call contract functions** — Use the generated types in `index.d.cts` to interact with your contract from TypeScript
-3. **Deploy to testnet** — Extend `test.ts` to deploy and call your contract
-
----
-
-## 📝 License
+## License
 
 [MIT](LICENSE)

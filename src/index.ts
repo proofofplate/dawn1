@@ -1,47 +1,39 @@
-/**
- * dawn1 — Midnight Network starter
- *
- * Connects a wallet, shows balance, and reads the contract state.
- *
- * Usage:
- *   npm run dev
- *
- * Setup:
- *   1. Copy .env.example → .env and add your 24-word seed phrase
- *   2. npm install
- *   3. npm run build     (compiles the Compact contract)
- *   4. npm run dev
- */
 import 'dotenv/config';
-import { buildWalletFromMnemonic } from './wallet.js';
-import { CONFIG } from './config.js';
-import { firstValueFrom } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { firstValueFrom, filter } from 'rxjs';
+import { ZswapSecretKeys, DustSecretKey } from '@midnight-ntwrk/ledger-v8';
+import { ENV, NETWORK_ID } from './config.js';
+import { buildWallet } from './wallet.js';
 
-async function main() {
+async function main(): Promise<void> {
   const mnemonic = process.env.WALLET_SEED;
   if (!mnemonic) {
-    console.error('Error: WALLET_SEED not set. Copy .env.example to .env');
+    console.error('WALLET_SEED is not set. Copy .env.example to .env and add your 24-word seed.');
     process.exit(1);
   }
 
-  console.log(`Connecting to Midnight ${CONFIG.NETWORK_ID}...`);
-  console.log(`  Indexer:      ${CONFIG.indexer}`);
-  console.log(`  Node:         ${CONFIG.node}`);
-  console.log(`  Proof server: ${CONFIG.proofServer}`);
+  console.log(`Connecting to Midnight ${NETWORK_ID}...`);
+  console.log(`  Indexer:      ${ENV.indexer}`);
+  console.log(`  Node:         ${ENV.node}`);
+  console.log(`  Proof server: ${ENV.proofServer}`);
   console.log('');
 
-  const wallet = await buildWalletFromMnemonic(mnemonic);
+  const { wallet, seeds, keystore } = await buildWallet(ENV, mnemonic);
 
-  // Wait for wallet to sync at least one state update
-  const state = await firstValueFrom(
-    wallet.state().pipe(filter((s: any) => s !== undefined)),
-  );
+  await wallet.start(ZswapSecretKeys.fromSeed(seeds.shielded), DustSecretKey.fromSeed(seeds.dust));
 
-  console.log('Wallet ready:');
-  console.log(`  Address: ${state.address}`);
-  console.log(`  DUST:    ${state.balances?.dust ?? 'syncing...'}`);
-  console.log(`  NIGHT:   ${state.balances?.night ?? 'syncing...'}`);
+  console.log('Wallet started. Syncing...');
+  const synced = await firstValueFrom(wallet.state().pipe(filter((s) => s.isSynced)));
+
+  const shieldedAddress = synced.shielded.address.toString();
+  const unshieldedAddress = keystore.getBech32Address().toString();
+  const dustBalance = synced.dust.balance(new Date()) ?? 0n;
+
+  console.log('');
+  console.log(`Shielded:    ${shieldedAddress}`);
+  console.log(`Unshielded:  ${unshieldedAddress}`);
+  console.log(`Shielded balances:   ${JSON.stringify(synced.shielded.balances ?? {})}`);
+  console.log(`Unshielded balances: ${JSON.stringify(synced.unshielded.balances ?? {})}`);
+  console.log(`Dust balance:        ${dustBalance.toString()}`);
 
   await wallet.stop();
 }

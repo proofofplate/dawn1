@@ -1,26 +1,20 @@
-import * as bip39 from 'bip39';
-import { WalletBuilder } from '@midnight-ntwrk/wallet-sdk-facade';
-import { CONFIG, NETWORK_ID } from './config.js';
+import { FluentWalletBuilder, type EnvironmentConfiguration } from '@midnight-ntwrk/testkit-js';
+import { LedgerParameters } from '@midnight-ntwrk/ledger-v8';
+import type { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
+import type { UnshieldedKeystore } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
 
-/**
- * Build and start a wallet from a BIP39 mnemonic phrase.
- * Connects to the configured testnet indexer and node.
- */
-export async function buildWalletFromMnemonic(mnemonic: string) {
-  const entropy = bip39.mnemonicToEntropy(mnemonic);
-  // Pad entropy to 32-byte hex seed
-  const hexSeed = entropy.padStart(64, '0');
+export interface WalletBundle {
+  wallet: WalletFacade;
+  seeds: { masterSeed: string; shielded: Uint8Array; unshielded: Uint8Array; dust: Uint8Array };
+  keystore: UnshieldedKeystore;
+}
 
-  const wallet = await WalletBuilder.buildFromSeed(
-    CONFIG.indexer,
-    CONFIG.indexerWS,
-    CONFIG.proofServer,
-    CONFIG.node,
-    hexSeed,
-    NETWORK_ID,
-    'warn',
-  );
-
-  await wallet.start();
-  return wallet;
+export async function buildWallet(env: EnvironmentConfiguration, mnemonic: string): Promise<WalletBundle> {
+  const builder = FluentWalletBuilder.forEnvironment(env).withDustOptions({
+    ledgerParams: LedgerParameters.initialParameters(),
+    additionalFeeOverhead: env.walletNetworkId === 'undeployed' ? 500_000_000_000_000_000n : 1_000n,
+    feeBlocksMargin: 5,
+  });
+  const result = await builder.withMnemonic(mnemonic).buildWithoutStarting();
+  return result as unknown as WalletBundle;
 }
